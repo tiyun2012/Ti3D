@@ -1,39 +1,77 @@
+# Log file to track which steps have been completed
+$logFile = ".\\setup.log"
 
-# Import the module 
-$modulePath = ".\powershellModule.psm1" 
-try 
-{
-    Write-Progress -Activity "import port $modulePath : " -Status "start importing" -PercentComplete 0
-    Import-Module $modulePath -Verbose  # powershellModule\Reset-Module #-ModulePath $modulePath
-    Write-Progress -Activity "import port $modulePath : " -Status "done" -PercentComplete 100
+# Function to log progress
+function Write-ProgressLog {
+    param(
+        [string]$message
+    )
+    Add-Content -Path $logFile -Value $message
 }
-catch 
-{
-    Write-Error "Failed to import module: $_"
-    return
-}
-#------------check Python version------------------
 
-$pythonVersion ="3.12"
-$isPythonVersionInstalled=powershellModule\Get-PythonVersion -RequiredVersion $pythonVersion    
-if($isPythonVersionInstalled -eq $true)
-{
-    Write-Output "Python $pythonVersion is available in your system."
+# Function to check if a step has been completed
+function Test-StepCompleted {
+    param(
+        [string]$step
+    )
+    return Select-String -Path $logFile -Pattern $step -Quiet
 }
-else 
-    {
-        Write-Error "Please install Python $pythonVersion in your system."
-        return powershellModule\Get-CallerInfo
+
+# Import the module
+$modulePath = ".\\powershellModule.psm1"
+
+if (-not (Test-StepCompleted "module_imported")) {
+    try {
+        Write-Progress -Activity "importing module $modulePath" -Status "start importing" -PercentComplete 0
+        Import-Module $modulePath -Verbose
+        Write-Progress -Activity "importing module $modulePath" -Status "done" -PercentComplete 100
+        Write-ProgressLog "module_imported"
     }
+    catch {
+        Write-Error "Failed to import module: $_"
+        return
+    }
+}
+else {
+    Write-Output "Module already imported, skipping this step."
+}
 
+# Check Python version
+$pythonVersion = "3.12"
 
-# -----------------Call the virtual environment creation function-----------------------
+if (-not (Test-StepCompleted "python_version_checked")) {
+    $isPythonVersionInstalled = powershellModule\Get-PythonVersion -RequiredVersion $pythonVersion
+    if ($isPythonVersionInstalled -eq $true) {
+        Write-Output "Python $pythonVersion is available in your system."
+        Write-ProgressLog "python_version_checked"
+    }
+    else {
+        Write-Error "Please install Python $pythonVersion in your system."
+        return
+    }
+}
+else {
+    Write-Output "Python version already checked, skipping this step."
+}
+
+# Create virtual environment
 $venvName = ".venv"
-&powershellModule\New-PythonVirtualEnvironment -venvName $venvName
-#----------------install python module----------------
-# Install the required modules
-powershellModule\Install-RequiredPythonModules -EnvPath (".\$venvName") -RequirementsFile ".\requirements.txt" -ForceInstall $false
 
-Write-Output "settings is successfully"    
+if (-not (Test-StepCompleted "venv_created")) {
+    &powershellModule\New-PythonVirtualEnvironment -venvName $venvName
+    Write-ProgressLog "venv_created"
+}
+else {
+    Write-Output "Virtual environment already created, skipping this step."
+}
 
+# Install required Python modules
+if (-not (Test-StepCompleted "modules_installed")) {
+    powershellModule\Install-RequiredPythonModules -EnvPath (".\\$venvName") -RequirementsFile ".\\requirements.txt" -ForceInstall $false
+    Write-ProgressLog "modules_installed"
+}
+else {
+    Write-Output "Required Python modules already installed, skipping this step."
+}
 
+Write-Output "Settings successfully completed."

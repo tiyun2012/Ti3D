@@ -1,21 +1,126 @@
-function Test-FolderExistence {
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+function Copy-Folders {
     param (
-        [string]$FolderName
+        [string]$SourcePath,
+        [string]$DestinationPath,
+        [string[]]$FoldersToCopy
     )
 
-    # Get the current directory
-    $CurrentDirectory = Get-Location
+    foreach ($folder in $FoldersToCopy) {
+        $sourceFolderPath = Join-Path -Path $SourcePath -ChildPath $folder
+        $destinationFolderPath = Join-Path -Path $DestinationPath -ChildPath $folder
 
-    # Combine the current directory path with the folder name
-    $FolderPath = Join-Path -Path $CurrentDirectory -ChildPath $FolderName
+        if (-not (Test-Path -Path $sourceFolderPath -PathType Container)) {
+            Write-Error "Source folder '$sourceFolderPath' does not exist."
+            return $false
+        }
 
-    # Check if the folder exists
-    if (Test-Path -Path $FolderPath -PathType Container) {
+        Write-Output "Copying $sourceFolderPath to $destinationFolderPath"
+        try {
+            Copy-Item -Path $sourceFolderPath -Destination $destinationFolderPath -Recurse -Force
+            Write-Output "Copied $folder successfully."
+        } catch {
+            Write-Error "Failed to copy folder '$folder': $_"
+            return $false
+        }
+    }
+
+    return $true
+}
+function Expand-Rar {
+    param (
+        [string]$RarFilePath,
+        [string]$ExtractToPath
+    )
+
+    Write-Output "Extracting $RarFilePath to $ExtractToPath"
+    try {
+        # Load necessary namespaces
+        $reader = [SharpCompress.Readers.Rar.RarReader]::Open([System.IO.File]::OpenRead($RarFilePath))
+        while ($reader.MoveToNextEntry()) {
+            if (-not $reader.Entry.IsDirectory) {
+                $entryPath = Join-Path -Path $ExtractToPath -ChildPath $reader.Entry.Key
+                $entryDirectory = [System.IO.Path]::GetDirectoryName($entryPath)
+
+                if (-not (Test-Path -Path $entryDirectory)) {
+                    New-Item -Path $entryDirectory -ItemType Directory | Out-Null
+                }
+
+                Write-Output "Extracting $entryPath"
+                $reader.WriteEntryToFile($entryPath)
+            }
+        }
+        Write-Output "Extraction completed."
         return $true
-    } else {
+    } catch {
+        Write-Error "Failed to extract rar file: $_"
         return $false
     }
 }
+function Expand-Zip {
+    param (
+        [string]$ZipFilePath,
+        [string]$ExtractToPath
+    )
+
+    Write-Output "Extracting $ZipFilePath to $ExtractToPath"
+    try {
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($ZipFilePath, $ExtractToPath)
+        Write-Output "Extraction completed."
+        return $true
+    } catch {
+        Write-Error "Failed to extract zip file: $_"
+        return $false
+    }
+}
+function Expand-SpecificFiles {
+    param (
+        [string]$ZipFilePath,
+        [string]$ExtractToPath,
+        [string]$FileExtension = ".txt"
+    )
+
+    Write-Output "Extracting $ZipFilePath to $ExtractToPath"
+    try {
+        $zip = [System.IO.Compression.ZipFile]::OpenRead($ZipFilePath)
+        foreach ($entry in $zip.Entries) {
+            if ($entry.FullName -like "*$FileExtension") {
+                $entryPath = Join-Path -Path $ExtractToPath -ChildPath $entry.FullName
+                $entryDirectory = [System.IO.Path]::GetDirectoryName($entryPath)
+
+                if (-not (Test-Path -Path $entryDirectory)) {
+                    New-Item -Path $entryDirectory -ItemType Directory | Out-Null
+                }
+
+                Write-Output "Extracting $entryPath"
+                $entry.ExtractToFile($entryPath, $true)
+            }
+        }
+        Write-Output "Extraction completed."
+        return $true
+    } catch {
+        Write-Error "Failed to extract zip file: $_"
+        return $false
+    }
+}
+function Invoke-WebFile {
+    param (
+        [string]$Url,
+        [string]$DestinationPath
+    )
+
+    Write-Output "Downloading file from $Url to $DestinationPath"
+    try {
+        Invoke-WebRequest -Uri $Url -OutFile $DestinationPath
+        Write-Output "Download completed."
+        return $true
+    } catch {
+        Write-Error "Failed to download file: $_"
+        return $false
+    }
+}
+
 function New-PythonVirtualEnvironment {
     param (
         [string]$venvName=".venv"
@@ -124,7 +229,6 @@ function Get-PythonVersion {
         return $false
     }
 }
-
 function Install-RequiredPythonModules {
     param (
         [string]$EnvPath,
@@ -172,7 +276,6 @@ function Write-ProgressLog {
     )
     Add-Content -Path $logFile -Value $message
 }
-
 # Function to check if a step has been completed
 function Test-StepCompleted {
     param(
@@ -180,4 +283,34 @@ function Test-StepCompleted {
         [string]$logFile = ".\setup.log"
     )
     return Select-String -Path $logFile -Pattern $step -Quiet
+}
+function Test-FileExistence {
+    param (
+        [string]$FilePath
+    )
+
+    # Check if the file exists
+    if (Test-Path -Path $FilePath -PathType Leaf) {
+        return $true
+    } else {
+        return $false
+    }
+}
+function Test-FolderExistence {
+    param (
+        [string]$FolderName
+    )
+
+    # Get the current directory
+    $CurrentDirectory = Get-Location
+
+    # Combine the current directory path with the folder name
+    $FolderPath = Join-Path -Path $CurrentDirectory -ChildPath $FolderName
+
+    # Check if the folder exists
+    if (Test-Path -Path $FolderPath -PathType Container) {
+        return $true
+    } else {
+        return $false
+    }
 }

@@ -165,3 +165,19 @@ function Install-RequiredPythonModules {
 
     Write-Host "All required modules are installed."
 }
+function Write-ProgressLog {
+    param(
+        [string]$message,
+        [string]$logFile = ".\setup.log"
+    )
+    Add-Content -Path $logFile -Value $message
+}
+
+# Function to check if a step has been completed
+function Test-StepCompleted {
+    param(
+        [string]$step,
+        [string]$logFile = ".\setup.log"
+    )
+    return Select-String -Path $logFile -Pattern $step -Quiet
+}

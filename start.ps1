@@ -57,4 +57,34 @@ $glfwZip=".\glfw-3.4.zip"
 $glfwRoot=".\glfw-3.4"
 $glfwList=@("lib-vc2022\glfw3.dll","lib-vc2022\glfw3.lib","lib-vc2022\glfw3dll.lib","lib-vc2022\glfw3_mt.lib")
 powershellModule\Expand-SpecificFilesFromZip -zipFilePath $glfwZip -destinationPath $glfwRoot -filesTracked  $glfwList  
+
+
+Write-Host "--- Checking Dear ImGui Module-----" -ForegroundColor Yellow
+$imguiZip = ".\\imgui.zip"
+$imguiUri = "https://github.com/ocornut/imgui/archive/refs/heads/master.zip"
+
+# Check if the zip file already exists
+$testImguiFileExisting = powershellModule\Test-FileExistence -FilePath $imguiZip
+if ($testImguiFileExisting) {
+    Write-Output "$imguiZip already exists in the current working directory"
+} else {
+    # Download the zip file
+    if (powershellModule\Test-Uri -Uri $imguiUri) {
+        powershellModule\Invoke-WebFile -Url $imguiUri -DestinationPath $imguiZip
+    } else {
+        powershellModule\Write-ProgressLog "Error: the link is not valid: $imguiUri" -logFile $ErrorLog
+        Write-Host "Error: the link is not valid: $imguiUri" -ForegroundColor Red
+        return
+    }
+}
+
+# Extract specific Dear ImGui files
+$imguiRoot = ".\imgui"
+$imguiList = @("imgui.h", "imgui.cpp", "backends/imgui_impl_glfw.cpp", "backends/imgui_impl_opengl3.cpp")
+powershellModule\Expand-SpecificFilesFromZip -zipFilePath $imguiZip -destinationPath $imguiRoot -filesTracked $imguiList
+
+
+
+
 Write-Host "------------Settings successfully completed.---------------------------" -ForegroundColor Green
+

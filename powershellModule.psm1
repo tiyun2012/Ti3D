@@ -74,82 +74,75 @@ function Expand-Zip {
         return $false
     }
 }
-function Expand-SpecificFilesFromZip 
-{
-    param 
-    (
-    [string]$zipFilePath,       # Path to the ZIP file
-    [string]$destinationPath,   # Where to extract the files
-    [string[]]$filesTracked # List of files to extract
+function Expand-SpecificFilesFromZip {
+    param (
+        [string]$zipFilePath,       # Path to the ZIP file
+        [string]$destinationPath,   # Where to extract the files
+        [string[]]$filesTracked     # List of files to extract
     )
-$testZipFileExisting =Test-FileExistence -FilePath $zipFilePath
-if (-not($testZipFileExisting))
-{
-    Write-Error "The ZIP file '$zipFilePath' does not exist."
-    return $null
-}
-# Open the zip archive
-$zipArchive = [System.IO.Compression.ZipFile]::OpenRead($zipFilePath)
 
-# Loop through each entry in the zip file $file in $filesTracked
-foreach ($file in $filesTracked) {
-    $outputFilePath = Join-Path $destinationPath $file
-    $testExistingFile=Test-FileExistence -FilePath $outputFilePath
-    if($testExistingFile)
-    {
-        Write-Host "$testExistingFile  already exists" -ForegroundColor Green
-        continue
+    # Check if the ZIP file exists
+    $testZipFileExisting = Test-FileExistence -FilePath $zipFilePath
+    if (-not $testZipFileExisting) {
+        Write-Error "The ZIP file '$zipFilePath' does not exist."
+        return $null
     }
-    else {
-        Write-Warning "$testExistingFile  doesn't exist"
-    }
-    foreach ($entry in $zipArchive.Entries) 
-    {
-        [bool] $testEndWith = $entry.FullName.endsWith($file)
 
-        if ($testEndWith) 
-        {
-            Write-Host "is extracting $($entry.FullName) to $destinationPath" -ForegroundColor Yellow
-            # Create directory structure if necessary
-            $outputDir = [System.IO.Path]::GetDirectoryName($outputFilePath)
-            if (-not (Test-Path $outputDir)) 
-            {
-                New-Item -Path $outputDir -ItemType Directory | Out-Null
-            }
-            else
-            {
-                Write-Host "Directory ($outputDir) already exists" -ForegroundColor Green
-            }
+    # Open the zip archive
+    $zipArchive = [System.IO.Compression.ZipFile]::OpenRead($zipFilePath)
 
-            # Check if entry is a file (not a directory)
-            if (-not [string]::IsNullOrEmpty($entry.Name)) 
-            {
-                # Extract file manually using streams
-                $fileStream = [System.IO.File]::Create($outputFilePath)
-                $entryStream = $entry.Open()
+    # Loop through each file to extract
+    foreach ($file in $filesTracked) {
+        $outputFilePath = Join-Path $destinationPath $file
 
-                try 
-                {
-                    $entryStream.CopyTo($fileStream)
-                } 
-                finally 
-                {
-                    # Ensure the streams are closed after copying
-                    $fileStream.Close()
-                    $entryStream.Close()
+        # Check if the file already exists
+        $testExistingFile = Test-FileExistence -FilePath $outputFilePath
+        if ($testExistingFile) {
+            Write-Host "$outputFilePath already exists" -ForegroundColor Green
+            continue
+        } else {
+            Write-Warning "$outputFilePath doesn't exist"
+        }
+
+        # Look for the exact file name match in the zip entries
+        $entryFound = $false
+        foreach ($entry in $zipArchive.Entries) {
+            $name_=$entry.FullName
+            if ($name_.EndsWith($file.Replace('\', '/').Replace('//','/') )){
+                $entryFound = $true
+                Write-Host "Extracting $($entry.FullName) to $destinationPath" -ForegroundColor Yellow
+
+                # Create directory structure if necessary
+                $outputDir = [System.IO.Path]::GetDirectoryName($outputFilePath)
+                if (-not (Test-Path $outputDir)) {
+                    New-Item -Path $outputDir -ItemType Directory | Out-Null
                 }
+
+                # Extract the file
+                # Write the entry content to the output file using the provided method
+                $entryStream = $entry.Open()
+                $outputStream = [System.IO.File]::Create($outputFilePath)
+                try {
+                    $buffer = New-Object byte[] 8192  # Use a buffer to copy the data
+                    while (($bytesRead = $entryStream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                        $outputStream.Write($buffer, 0, $bytesRead)
+                    }
+                } finally {
+                    $entryStream.Close()
+                    $outputStream.Close()
+                }
+                break
             }
-            break
+        }
+
+        if (-not $entryFound) {
+            Write-Host "File '$file' not found in the archive." -ForegroundColor Red
         }
     }
+
+    $zipArchive.Dispose()  # Clean up
 }
 
-# Dispose of the archive
-$zipArchive.Dispose()
-
-Write-Host "Extraction completed for the specified files."
-
-}
 function Invoke-WebFile {
     param (
         [string]$Url,

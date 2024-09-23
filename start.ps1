@@ -44,7 +44,7 @@ if ($testZipfileExisting)
 # -----FLFW InCLude -----
 $glfwZip=".\glfw-3.4.zip"
 $glfwRoot=".\glfw-3.4"
-$glfwList=@("include\GLFW\glfw3.h","\include\GLFW\glfw3native.h")
+$glfwList=@("include/GLFW/glfw3.h","include/GLFW/glfw3native.h")
 
 powershellModule\Expand-SpecificFilesFromZip -zipFilePath $glfwZip -destinationPath $glfwRoot -filesTracked  $glfwList  
 # for mingw

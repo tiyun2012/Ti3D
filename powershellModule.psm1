@@ -74,12 +74,14 @@ function Expand-Zip {
         return $false
     }
 }
-function Expand-SpecificFilesFromZip {
-    param (
+function Expand-SpecificFilesFromZip 
+{
+    param 
+    (
     [string]$zipFilePath,       # Path to the ZIP file
     [string]$destinationPath,   # Where to extract the files
     [string[]]$filesTracked # List of files to extract
-)
+    )
 $testZipFileExisting =Test-FileExistence -FilePath $zipFilePath
 if (-not($testZipFileExisting))
 {
@@ -95,22 +97,28 @@ foreach ($file in $filesTracked) {
     $testExistingFile=Test-FileExistence -FilePath $outputFilePath
     if($testExistingFile)
     {
-        Write-Host "$testExistingFile  already exists"
+        Write-Host "$testExistingFile  already exists" -ForegroundColor Green
         continue
     }
-    
+    else {
+        Write-Warning "$testExistingFile  doesn't exist"
+    }
     foreach ($entry in $zipArchive.Entries) 
     {
         [bool] $testEndWith = $entry.FullName.endsWith($file)
 
         if ($testEndWith) 
         {
-            Write-Host "is extracting ($entry.FullName) to $destinationPath"
+            Write-Host "is extracting $($entry.FullName) to $destinationPath" -ForegroundColor Yellow
             # Create directory structure if necessary
             $outputDir = [System.IO.Path]::GetDirectoryName($outputFilePath)
             if (-not (Test-Path $outputDir)) 
             {
                 New-Item -Path $outputDir -ItemType Directory | Out-Null
+            }
+            else
+            {
+                Write-Host "Directory ($outputDir) already exists" -ForegroundColor Green
             }
 
             # Check if entry is a file (not a directory)
@@ -141,7 +149,8 @@ $zipArchive.Dispose()
 
 Write-Host "Extraction completed for the specified files."
 
-}function Invoke-WebFile {
+}
+function Invoke-WebFile {
     param (
         [string]$Url,
         [string]$DestinationPath

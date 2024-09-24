@@ -309,12 +309,30 @@ function Install-RequiredPythonModules {
     Write-Host "All required modules are installed."
 }
 function Write-ProgressLog {
-    param(
-        [string]$message,
-        [string]$logFile = ".\setup.log"
+    param (
+        [string]$Message,
+        [string]$logFile,
+        [bool]$clean = $false
     )
-    Add-Content -Path $logFile -Value $message
+
+    try {
+        # Clean the log file if $clean is passed as $true
+        if ($clean -eq $true) {
+            Clear-Content -Path $logFile
+            Write-Output "Log file content cleared: $logFile"
+        }
+
+        # Append the new message to the log file
+        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        $logEntry = "$timestamp - $Message"
+        
+        Add-Content -Path $logFile -Value $logEntry
+        Write-Output "Log entry added: $logEntry"
+    } catch {
+        Write-Error "Failed to write to log file: $_"
+    }
 }
+
 # Function to check if a step has been completed
 function Test-StepCompleted {
     param(

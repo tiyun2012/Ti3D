@@ -42,28 +42,58 @@ powershellModule\Expand-SpecificFilesFromZip -zipFilePath $imguiZip -destination
 
 # ------------------ Setup GLAD --------------------------------
 Write-Host "--- Checking GLAD Module-----" -ForegroundColor Yellow
-$gladZip = ".\\glad.zip"
-$gladUri = "https://github.com/Dav1dde/glad/archive/refs/heads/master.zip"
 
-# Check if the zip file already exists
-$testGladFileExisting = powershellModule\Test-FileExistence -FilePath $gladZip
-if ($testGladFileExisting) {
-    Write-Output "$gladZip already exists in the current working directory"
-} else {
-    # Download the zip file
-    if (powershellModule\Test-Uri -Uri $gladUri) {
-        powershellModule\Invoke-WebFile -Url $gladUri -DestinationPath $gladZip
-    } else {
-        powershellModule\Write-ProgressLog "Error: the link is not valid: $gladUri" -logFile $ErrorLog
-        Write-Host "Error: the link is not valid: $gladUri" -ForegroundColor Red
-        return
+# Test existing  GLAD files
+$gladRoot = ".\glad"
+$gladList = @("include/glad/glad.h", "src/glad.c")
+$gladZip = ".\glad.zip"
+$gladUri = "https://github.com/Dav1dde/glad/archive/refs/heads/master.zip"
+try 
+{
+    foreach ($gladFile in $gladList)
+    {
+        $relativeGladPath = Join-Path -Path $gladRoot -ChildPath $gladFile
+        $testGladFileExisting=powershellModule\Test-FileExistence -FilePath $relativeGladPath
+        if ($testGladFileExisting) 
+        {
+            Write-Host "$gladFile already exists in $gladRoot" -ForegroundColor Green
+        } else  
+        {
+            throw "$gladFile is not available in $gladRoot"
+
+        }
     }
 }
+catch 
+{
+    Write-Host " $_"
+    # Check if the zip file already exists
+    $testGladZipExisting = powershellModule\Test-FileExistence -FilePath $gladZip
+    if ($testGladZipExisting) 
+    {
+        Write-Output "$gladZip already exists in the current working directory"
+    } 
+    else 
+    {
+        # Download the zip file
+        if (powershellModule\Test-Uri -Uri $gladUri) 
+        {
+            powershellModule\Invoke-WebFile -Url $gladUri -DestinationPath $gladZip
+        } 
+        else 
+        {
+            powershellModule\Write-ProgressLog "Error: the link is not valid: $gladUri" -logFile $ErrorLog
+            Write-Host "Error: the link is not valid: $gladUri" -ForegroundColor Red
+            return
+        }
+        
+    }
+    Write-Host "--------1: try to Generate Cmake project using Cmake UI " -ForegroundColor Cyan
+    Write-Host "--------2:Build Project Using Visual Studio " -ForegroundColor Cyan
+    Write-Host "--------3:Copy $gladList to $Gladroot then run start.ps1 again" -ForegroundColor Cyan 
+    return
+}
 
-# Extract specific GLAD files
-$gladRoot = ".\\glad"
-$gladList = @("include/glad/glad.h", "src/glad.c")
-powershellModule\Expand-SpecificFilesFromZip -zipFilePath $gladZip -destinationPath $gladRoot -filesTracked $gladList
 
 # ------------------ Setup GLFW (already present) --------------------------------
 Write-Host "--- Checking GLFW Module-----" -ForegroundColor Yellow

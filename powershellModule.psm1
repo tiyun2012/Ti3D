@@ -226,7 +226,7 @@ function Reset-Module {
     }
 }
 
-function Get-CallerInfo {
+function Trace-Info {
     $callStack = Get-PSCallStack
     if ($callStack.Count -gt 1) {
         $callerFrame = $callStack[1]

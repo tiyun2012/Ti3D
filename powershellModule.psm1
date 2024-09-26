@@ -155,7 +155,7 @@ function Invoke-WebFile {
         Write-Output "Download completed."
         return $true
     } catch {
-        Write-Error "Failed to download file: $_"
+        throw "Failed to download file $_"
         return $false
     }
 }

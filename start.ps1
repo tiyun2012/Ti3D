@@ -57,7 +57,9 @@ if ($testImguiFileExisting)
 
 # Extract specific Dear ImGui files
 $imguiRoot = "$thirdPartyRoot\imgui"
-$imguiList = @("imgui.h", "imgui.cpp", "backends/imgui_impl_glfw.cpp", "backends/imgui_impl_opengl3.cpp")
+$imguiList = @("imgui_widgets.cpp","imgui_demo.cpp","backends/imgui_impl_glfw.h","backends/imgui_impl_opengl3.h","imgui_draw.cpp","imgui.h",
+             "imgui.cpp", "backends/imgui_impl_glfw.cpp", "backends/imgui_impl_opengl3.cpp","imstb_truetype.h",
+             "imgui_tables.cpp","imgui_internal.h","imconfig.h","imstb_rectpack.h","imstb_textedit.h","backends/imgui_impl_opengl3_loader.h")
 powershellModule\Expand-SpecificFilesFromZip -zipFilePath $imguiZip -destinationPath $imguiRoot -filesTracked $imguiList
 
 # ------------------ Setup GLAD --------------------------------

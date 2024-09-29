@@ -22,6 +22,11 @@
             "args": [
                 "${workspaceFolder}/src/main.cpp",
                 "${workspaceFolder}/ThirdParty/gladLib/src/glad.c",
+                "${workspaceFolder}/ThirdParty/imgui/imgui.cpp",
+                "${workspaceFolder}/ThirdParty/imgui/imgui_draw.cpp",
+                "${workspaceFolder}/ThirdParty/imgui/imgui_widgets.cpp",
+                "${workspaceFolder}/ThirdParty/imgui/backends/imgui_impl_glfw.cpp",
+                "${workspaceFolder}/ThirdParty/imgui/backends/imgui_impl_opengl3.cpp",
                 "-I", "${workspaceFolder}/thirdParty/gladLib/include",
                 "-I", "${workspaceFolder}/thirdParty/imgui",
                 "-I", "${workspaceFolder}/thirdParty/glfw-3.4/include",

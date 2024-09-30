@@ -36,7 +36,7 @@
                 "-I", "${workspaceFolder}/thirdParty/backends",
                 "-I", "${workspaceFolder}/thirdParty/glfw-3.4/include",
                 "-L", "${workspaceFolder}/thirdParty/glfw-3.4/lib-mingw-w64",
-                "-o", "${workspaceFolder}/bin/main.exe",
+                "-o", "${workspaceFolder}/bin/Ti3d.exe",
                 "-std=c++17",
                 "-lglfw3",
                 "-lopengl32",

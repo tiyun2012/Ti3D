@@ -137,10 +137,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\main.cpp">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)glfw-3.4\include;$(ProjectDir)glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)glfw-3.4\include;$(ProjectDir)glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="ThirdParty\gladLib\src\glad.c" />
     <ClCompile Include="ThirdParty\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="ThirdParty\imgui\backends\imgui_impl_opengl3.cpp" />
